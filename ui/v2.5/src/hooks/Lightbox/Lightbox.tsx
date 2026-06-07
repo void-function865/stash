@@ -45,8 +45,10 @@ import {
   faTimes,
   faBars,
   faImages,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
+import { DeleteImagesDialog } from "src/components/Images/DeleteImagesDialog";
 import { useDebounce } from "../debounce";
 import { isVideo } from "src/utils/visualFile";
 import { imageTitle } from "src/core/files";
@@ -96,6 +98,7 @@ interface IProps {
   pageCallback?: (props: { direction?: number; page?: number }) => void;
   chapters?: IChapter[];
   hide: () => void;
+  onDeleteImage?: (id: string) => void;
 }
 
 export const LightboxComponent: React.FC<IProps> = ({
@@ -112,6 +115,7 @@ export const LightboxComponent: React.FC<IProps> = ({
   pageCallback,
   chapters = [],
   hide,
+  onDeleteImage,
 }) => {
   const [updateImage] = useImageUpdate();
 
@@ -125,6 +129,8 @@ export const LightboxComponent: React.FC<IProps> = ({
   const [showOptions, setShowOptions] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(0);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const lastDKeyTime = useRef<number>(0);
   const [navOffset, setNavOffset] = useState<React.CSSProperties | undefined>();
 
   const oldImages = useRef<ILightboxImage[]>([]);
@@ -449,8 +455,18 @@ export const LightboxComponent: React.FC<IProps> = ({
       if (e.key === "ArrowLeft") handleLeft();
       else if (e.key === "ArrowRight") handleRight();
       else if (e.key === "Escape") close();
+      else if (
+        e.key === "d" &&
+        images[index ?? initialIndex]?.id !== undefined
+      ) {
+        const now = Date.now();
+        if (now - lastDKeyTime.current < 1000) {
+          setIsDeleteDialogOpen(true);
+        }
+        lastDKeyTime.current = now;
+      }
     },
-    [setInstant, handleLeft, handleRight, close]
+    [setInstant, handleLeft, handleRight, close, images, index, initialIndex]
   );
   const handleFullScreenChange = () => {
     if (clearIntervalCallback.current) {
@@ -537,6 +553,14 @@ export const LightboxComponent: React.FC<IProps> = ({
   };
 
   const currentIndex = index === null ? initialIndex : index;
+
+  useEffect(() => {
+    if (images.length === 0) {
+      close();
+    } else if (index !== null && index >= images.length) {
+      setIndex(images.length - 1);
+    }
+  }, [images.length, index, close]);
 
   function gotoPage(imageIndex: number) {
     const indexInPage = (imageIndex - 1) % pageSize;
@@ -978,13 +1002,29 @@ export const LightboxComponent: React.FC<IProps> = ({
           <div className={CLASSNAME_FOOTER_CENTER}>
             {currentImage && (
               <>
-                <Link
-                  className="image-link"
-                  to={`/images/${currentImage.id}`}
-                  onClick={() => close()}
+                <div
+                  className="d-flex align-items-center justify-content-center"
+                  style={{ gap: "0.5rem" }}
                 >
-                  {title ?? ""}
-                </Link>
+                  <Link
+                    className="image-link"
+                    to={`/images/${currentImage.id}`}
+                    onClick={() => close()}
+                  >
+                    {title ?? ""}
+                  </Link>
+                  {currentImage.id !== undefined && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="delete-button btn-danger-minimal"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      title={intl.formatMessage({ id: "actions.delete" })}
+                    >
+                      <Icon icon={faTrash} />
+                    </Button>
+                  )}
+                </div>
                 {currentImage.galleries?.length ? (
                   <Link
                     className="image-gallery-link"
@@ -998,7 +1038,7 @@ export const LightboxComponent: React.FC<IProps> = ({
               </>
             )}
           </div>
-          <div className={CLASSNAME_FOOTER_RIGHT}></div>
+          <div className={CLASSNAME_FOOTER_RIGHT} />
         </div>
       </>
     );
@@ -1016,6 +1056,20 @@ export const LightboxComponent: React.FC<IProps> = ({
       onClick={handleClose}
     >
       {renderBody()}
+      {isDeleteDialogOpen && images[currentIndex]?.id !== undefined && (
+        <DeleteImagesDialog
+          selected={[
+            {
+              id: images[currentIndex].id!,
+              visual_files: images[currentIndex].visual_files ?? [],
+            },
+          ]}
+          onClose={(confirmed) => {
+            setIsDeleteDialogOpen(false);
+            if (confirmed) onDeleteImage?.(images[currentIndex].id!);
+          }}
+        />
+      )}
     </div>
   );
 };
