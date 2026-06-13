@@ -89,6 +89,7 @@ interface IProps {
   initialIndex?: number;
   showNavigation: boolean;
   slideshowEnabled?: boolean;
+  slideshowAutostart?: boolean;
   page?: number;
   pages?: number;
   pageSize?: number;
@@ -104,6 +105,7 @@ export const LightboxComponent: React.FC<IProps> = ({
   initialIndex = 0,
   showNavigation,
   slideshowEnabled = false,
+  slideshowAutostart = false,
   page,
   pages,
   pageSize: pageSize = 40,
@@ -231,12 +233,16 @@ export const LightboxComponent: React.FC<IProps> = ({
     setLightboxSettings({ displayMode: v });
   }
 
-  // slideshowInterval is used for controlling the logic
-  // displaySlideshowInterval is for display purposes only
-  // keeping them separate and independant allows us to handle the logic however we want
-  // while still displaying something that makes sense to the user
+  // `slideshowInterval` controls the slideshow logic, while
+  // `displayedSlideshowInterval` is for display purposes only. Keeping the two
+  // separate lets us handle the logic however we want while still showing the
+  // user something that makes sense.
+  //
+  // Autostart the slideshow on open when requested (e.g. opening a gallery's
+  // lightbox from the galleries page). The component mounts fresh on each open,
+  // so initialising the interval here starts playback immediately.
   const [slideshowInterval, setSlideshowInterval] = useState<number | null>(
-    null
+    slideshowEnabled && slideshowAutostart ? slideshowDelay : null
   );
 
   const [displayedSlideshowInterval, setDisplayedSlideshowInterval] =
