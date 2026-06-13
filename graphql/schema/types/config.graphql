@@ -401,6 +401,8 @@ input ConfigInterfaceInput {
   autostartVideoOnPlaySelected: Boolean
   "If true, next scene in playlist will be played at video end by default"
   continuePlaylistDefault: Boolean
+  "If true, the slideshow will autostart when opening a gallery's lightbox from the galleries page"
+  autostartGallerySlideshow: Boolean
 
   "If true, studio overlays will be shown as text instead of logo images"
   showStudioAsText: Boolean
@@ -478,6 +480,8 @@ type ConfigInterfaceResult {
   autostartVideoOnPlaySelected: Boolean
   "If true, next scene in playlist will be played at video end by default"
   continuePlaylistDefault: Boolean
+  "If true, the slideshow will autostart when opening a gallery's lightbox from the galleries page"
+  autostartGallerySlideshow: Boolean
 
   "If true, studio overlays will be shown as text instead of logo images"
   showStudioAsText: Boolean
