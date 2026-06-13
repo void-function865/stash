@@ -205,6 +205,7 @@ const (
 	AutostartVideoOnPlaySelected        = "autostart_video_on_play_selected"
 	autostartVideoOnPlaySelectedDefault = true
 	ContinuePlaylistDefault             = "continue_playlist_default"
+	AutostartGallerySlideshow           = "autostart_gallery_slideshow"
 	ShowStudioAsText                    = "show_studio_as_text"
 	CSSEnabled                          = "cssenabled"
 	JavascriptEnabled                   = "javascriptenabled"
@@ -1305,6 +1306,10 @@ func (i *Config) GetAutostartVideoOnPlaySelected() bool {
 
 func (i *Config) GetContinuePlaylistDefault() bool {
 	return i.getBool(ContinuePlaylistDefault)
+}
+
+func (i *Config) GetAutostartGallerySlideshow() bool {
+	return i.getBool(AutostartGallerySlideshow)
 }
 
 func (i *Config) GetShowStudioAsText() bool {
