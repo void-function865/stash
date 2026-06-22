@@ -81,9 +81,10 @@ features:
     status: pending
     issue: 4315
     pr: null
-    # no branch yet — planned. When implemented it will be stacked on the
-    # delete-image branch, so declare the dependency now:
+    # Stacked on the gallery-lightbox branch: that change rewrites
+    # useGalleryLightbox/useGalleriesLightbox (where the counter's total is
+    # threaded), so the counter must be authored on top of it.
     depends_on:
-      - Delete image shortcut and button in the lightbox
-    # branch: feat/lightbox-global-counter   # uncomment once the branch exists
+      - Open gallery slideshow from the galleries page
+    branch: void/global-counter
     summary: Show a global image position counter in the lightbox.
