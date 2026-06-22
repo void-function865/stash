@@ -1,0 +1,90 @@
+# void build manifest — single source of truth for the downstream "void" build.
+#
+# The assemble script (void/assemble.py) checks out `stable_base`, cherry-picks
+# every feature that has a `branch` or `commits`, applies the fork-specific
+# build config, regenerates the README, and tags the result `<stable_base>-voidN`.
+#
+# Generated README groups features by `status`:
+#   merged   - merged upstream, awaiting a stable release (drop once released)
+#   open-pr  - has an open pull request upstream
+#   pending  - not yet submitted upstream (e.g. queued behind the 3-PR limit)
+#
+# A feature with neither `branch` nor `commits` is listed in the README but not
+# built (e.g. a planned change with no code yet).
+#
+# `depends_on` (list of feature `name`s) declares that a branch is stacked on
+# another not-yet-merged feature. Dependencies are cherry-picked first, and only
+# the commits unique to the dependent branch are applied (so the shared base is
+# not applied twice).
+
+stable_base: v0.31.1
+upstream_repo: stashapp/stash
+fork_repo: void-function865/stash
+upstream_remote: origin
+fork_remote: fork
+
+features:
+  - name: Don't mark forks as Official Build
+    status: pending
+    issue: 7065
+    pr: null
+    branch: feat/fork-official-build
+    summary: CI only sets the official-build flag for the upstream repository, so fork builds correctly report "Unofficial Build".
+
+  - name: Configurable update-check source
+    status: pending
+    issue: 7066
+    pr: null
+    branch: feat/configurable-update-source
+    summary: Lets a build point the update check at its own releases via a build-time UPDATE_REPO override (defaults to upstream).
+
+  - name: Image checksum cache-buster
+    status: merged
+    issue: null
+    pr: 6998
+    commits:
+      - 50fc59317704db80aa3c173ee28b2eab54295276
+    summary: Use the file checksum for image URL cache-busting so ratings/edits refresh reliably in the lightbox.
+
+  - name: Lightbox image aspect ratios on Safari
+    status: merged
+    issue: 5087
+    pr: 6961
+    commits:
+      - 64a104d9052a59c16964620edfa08663e939d23f
+    summary: Fix warped image aspect ratios in the lightbox on Safari.
+
+  # `branch` points at the void/* branch rebased onto stable_base (the upstream
+  # PR branch, listed via `pr`, is develop-based and doesn't apply onto the tag).
+  - name: Open gallery slideshow from the galleries page
+    status: open-pr
+    issue: 1579
+    pr: 7035
+    branch: void/gallery-lightbox
+    summary: A magnifying-glass control on gallery cards opens the slideshow directly.
+
+  - name: Delete image shortcut and button in the lightbox
+    status: open-pr
+    issue: 4512
+    pr: 7022
+    branch: void/delete-image
+    summary: Adds a "d d" shortcut and a trash button to delete the current image from the lightbox.
+
+  - name: Safari auto-start on transcode-required scenes
+    status: open-pr
+    issue: 6646
+    pr: 7016
+    branch: void/safari-transcode
+    summary: Fix scene auto-start in Safari when the scene requires server-side transcoding.
+
+  - name: Global image counter in the lightbox
+    status: pending
+    issue: 4315
+    pr: null
+    # Stacked on the gallery-lightbox branch: that change rewrites
+    # useGalleryLightbox/useGalleriesLightbox (where the counter's total is
+    # threaded), so the counter must be authored on top of it.
+    depends_on:
+      - Open gallery slideshow from the galleries page
+    branch: void/global-counter
+    summary: Show a global image position counter in the lightbox.
