@@ -69,6 +69,13 @@ export const LightboxProvider: React.FC = ({ children }) => {
     }
   };
 
+  const onDeleteImage = useCallback((id: string) => {
+    setLightboxState((s) => ({
+      ...s,
+      images: s.images.filter((img) => img.id !== id),
+    }));
+  }, []);
+
   return (
     <LightboxContext.Provider
       value={{ lightboxState, setLightboxState: setPartialState }}
@@ -76,7 +83,11 @@ export const LightboxProvider: React.FC = ({ children }) => {
       {children}
       <Suspense fallback={<></>}>
         {lightboxState.isVisible && (
-          <LightboxComponent {...lightboxState} hide={onHide} />
+          <LightboxComponent
+            {...lightboxState}
+            hide={onHide}
+            onDeleteImage={onDeleteImage}
+          />
         )}
       </Suspense>
     </LightboxContext.Provider>
