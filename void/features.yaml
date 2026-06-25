@@ -25,16 +25,16 @@ fork_remote: fork
 
 features:
   - name: Don't mark forks as Official Build
-    status: pending
+    status: open-pr
     issue: 7065
-    pr: null
+    pr: 7075
     branch: feat/fork-official-build
     summary: CI only sets the official-build flag for the upstream repository, so fork builds correctly report "Unofficial Build".
 
   - name: Configurable update-check source
-    status: pending
+    status: open-pr
     issue: 7066
-    pr: null
+    pr: 7076
     branch: feat/configurable-update-source
     summary: Lets a build point the update check at its own releases via a build-time UPDATE_REPO override (defaults to upstream).
 
