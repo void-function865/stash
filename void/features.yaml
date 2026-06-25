@@ -64,17 +64,19 @@ features:
     summary: A magnifying-glass control on gallery cards opens the slideshow directly.
 
   - name: Delete image shortcut and button in the lightbox
-    status: open-pr
+    status: merged
     issue: 4512
     pr: 7022
-    branch: void/delete-image
+    commits:
+      - 594bf46b682d11f390d5edeaaa257769dfd01b98
     summary: Adds a "d d" shortcut and a trash button to delete the current image from the lightbox.
 
   - name: Safari auto-start on transcode-required scenes
-    status: open-pr
+    status: merged
     issue: 6646
     pr: 7016
-    branch: void/safari-transcode
+    commits:
+      - 1534587cb1be3a74d9954cdeac2568ba20c8c2c4
     summary: Fix scene auto-start in Safari when the scene requires server-side transcoding.
 
   - name: Global image counter in the lightbox
