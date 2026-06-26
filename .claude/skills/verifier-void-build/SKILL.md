@@ -47,6 +47,46 @@ the `void-build` worktree, which kills the vite process and wipes node_modules +
 generated-graphql. After any (re-)assembly, re-run `serve.sh` and wait for ready
 again before driving :3000.
 
+## The backend must match the UI's GraphQL schema
+
+The dev UI (`:3000`) talks cross-origin to a backend on `:9999`, and it sends the
+queries for **its** schema. If that backend is older than the UI's tree, every
+query is rejected: the page shows an `Error loading configuration` /
+`Response not successful: Received status code 400` alert and nothing renders
+(galleries never load, so e2e specs time out waiting for `.image-card img`).
+
+The shipped void binary is pinned to a **stable base** and lags `develop` by many
+commits, so it is the wrong backend for a feature branch cut off current `develop`
+(e.g. a PR branch). Two ways to get a matching backend:
+
+- **Build one from the same tree** (what a develop-HEAD PR branch needs):
+
+  ```bash
+  make generate-backend        # REQUIRED FIRST — see below
+  go build -o /tmp/stash-dev ./cmd/stash
+  # stop whatever holds :9999, then (from the stash library dir with config.yml):
+  /tmp/stash-dev -c config.yml                                  # serves :9999
+  ```
+
+  Confirm it matches before driving the UI — introspect a field the branch adds,
+  e.g. `curl -s :9999/graphql -d '{"query":"{ __type(name:\"Studio\"){ fields { name } } }"}'`,
+  and a `{ configuration { ui } }` query should return `200`, not `400`. (In dev
+  the UI defaults its backend to port 9999 — `createClient.ts` — so vite on :3000
+  needs no extra wiring.)
+
+- **Verify against the shipped build instead**, accepting it tests the *binary's*
+  (older) UI, not your branch: `STASH_BASE=http://localhost:9999`.
+
+**gqlgen: `make generate-backend` is mandatory before `go build`.** The backend's
+generated gqlgen code — `internal/api/generated_exec.go` and `generated_models.go`
+— is **gitignored** (mirror of the frontend's gitignored `generated-graphql.ts`).
+A plain `go build ./cmd/stash` happily links a **stale** `generated_exec.go` from a
+previous run, so new schema fields exist in the `.graphql` files and resolvers but
+are *not wired into introspection* → the UI's queries still 400. Run
+`make generate-backend` (it runs `go generate ./cmd/stash` → gqlgen) first, every
+time the schema may have moved. The DB is migrated in place on first run; a library
+already at the latest migration (tracked in `schema_migrations`) fires no migration.
+
 ## Drive it + capture evidence
 
 `lib.py` gives a `session()` context (chromium + tracing) plus gallery helpers.
@@ -93,6 +133,10 @@ Write new scenarios next to the example; import helpers from `lib.py`. Check the
   the slider is a trusted mouse click. If only one entry point misbehaves,
   suspect event/scheduling timing — drive the real one.
 - **Cross-origin auth.** 401 on every request → disable auth on the :9999 server.
+- **`400` on every request → schema drift.** `Error loading configuration` and a
+  blank UI mean the `:9999` backend is older than the UI's tree. Build a matching
+  backend (`make generate-backend` then `go build`) — see "The backend must match
+  the UI's GraphQL schema" above. A `401` is auth; a `400` is schema.
 - **Don't borrow node_modules** across worktrees; vite major versions differ.
 - **Partial node_modules silently breaks gqlgen.** An interrupted `pnpm install`
   (or a freshly re-assembled worktree) leaves node_modules present but without
