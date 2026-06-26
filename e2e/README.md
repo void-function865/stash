@@ -7,10 +7,28 @@ unit/type checks can't — lightbox interactions, gallery navigation, touch gest
 
 ## Prereqs
 
-- A **Stash backend running on :9999** (the GraphQL API).
+- A **Stash backend running on :9999** (the GraphQL API) **whose schema matches the
+  UI you serve.** The UI sends queries for its own tree's schema; an older backend
+  rejects them with `400` and the UI shows `Error loading configuration` — galleries
+  never render and every spec times out on `.image-card img`. So when you serve a
+  branch cut off current `develop` (e.g. a PR branch), do **not** reuse an older
+  shipped binary — build a backend from the same tree:
+
+  ```bash
+  make generate-backend                  # regenerate the gitignored gqlgen exec FIRST
+  go build -o /tmp/stash-dev ./cmd/stash # plain build links a STALE generated_exec.go
+  /tmp/stash-dev -c config.yml           # from the library dir; serves :9999
+  ```
+
+  `internal/api/generated_exec.go` is gitignored and built by `make generate-backend`;
+  skipping it leaves new schema fields unwired into introspection, so queries still
+  `400`. Sanity-check with `curl :9999/graphql -d '{"query":"{ configuration { ui } }"}'`
+  → `200`. (`400` = schema drift; `401` = auth, disable it for cross-origin dev.)
 - The **UI served on :3000** — from `ui/v2.5`, run `pnpm start` (the vite dev server,
-  with HMR). It is cross-origin to the backend, so the backend must be reachable from
-  the browser. Alternatively point the tests straight at a running instance (see below).
+  with HMR). It is cross-origin to the backend (defaulting to backend port 9999), so
+  the backend must be reachable from the browser. Alternatively point the tests
+  straight at a running instance (see below) — that tests the *binary's* UI, not your
+  working tree.
 - Install deps and browsers (one-time):
 
   ```bash
