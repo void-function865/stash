@@ -147,3 +147,35 @@ Write new scenarios next to the example; import helpers from `lib.py`. Check the
 A worked rating-sync regression (the bug this skill last verified) lived in
 `scenario_rating_update.py` / `scenario_combined.py`; rebuild from `lib.py`'s
 `star_rating()` / `set_star_rating()` helpers if you need it again.
+
+## TS trial (`e2e/`)
+
+A TypeScript `@playwright/test` port of this harness is being trialed in the repo's
+top-level `e2e/` workspace (on the `void/e2e-trial` branch) — the candidate
+UI-testing framework to eventually propose to upstream stashapp/stash (which is
+TS-first and has no Python). The Python scripts here remain the working baseline;
+the TS suite is the thing under evaluation. Use whichever you prefer while the
+trial runs; prefer the TS suite when the point is to exercise/assess that workflow.
+
+Same model, different surface:
+
+- Bring-up is **shared** — the TS suite drives the same `serve.sh` dev server
+  (:3000) or the shipped build (`STASH_BASE=http://localhost:9999`), same auth-off
+  backend, same feature-branch flow.
+- `lib.py` → `e2e/lib.ts` (a `test` fixture collecting the `errors` list + the same
+  gallery helpers, selectors, and timing comments). `scenario_*.py` → `*.spec.ts`.
+- Runs a **desktop (chromium + firefox + webkit) + touch (ipad/iphone/pixel)**
+  matrix (this Python harness is Chromium-only). Desktop chromium is the must-pass
+  baseline; firefox/webkit may need per-engine timing tuning. Touch projects have no
+  hover, so they run only the `*.mobile.spec.ts` (tap-based) specs.
+- Evidence: HTML report + retained-on-failure trace (`cd e2e && pnpm report`),
+  vs. this skill's `final.png` / `trace.zip`.
+
+```bash
+cd e2e && pnpm install && pnpm exec playwright install chromium firefox webkit
+pnpm test                                  # vite dev server (:3000)
+STASH_BASE=http://localhost:9999 pnpm test # shipped build
+pnpm test --project=chromium               # one engine while iterating
+```
+
+See `e2e/README.md` for the full workflow. All the "Gotchas" above apply unchanged.
