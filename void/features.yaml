@@ -25,17 +25,20 @@ fork_remote: fork
 
 features:
   - name: Don't mark forks as Official Build
-    status: open-pr
+    status: merged
     issue: 7065
     pr: 7075
-    branch: feat/fork-official-build
+    commits:
+      - 23a6b80de54f567f55223b882245759340bb0a71
     summary: CI only sets the official-build flag for the upstream repository, so fork builds correctly report "Unofficial Build".
 
   - name: Configurable update-check source
-    status: open-pr
+    status: merged
     issue: 7066
     pr: 7076
-    branch: feat/configurable-update-source
+    commits:
+      - 19002b49700d0c71657835d3a8a2078a7725a644
+      - 61bcf6f29ff51a3564365e50e29da07388b5501e
     summary: Lets a build point the update check at its own releases via a build-time UPDATE_REPO override (defaults to upstream).
 
   - name: Image checksum cache-buster
@@ -55,9 +58,9 @@ features:
     summary: Fix warped image aspect ratios in the lightbox on Safari.
 
   # `branch` points at the void/* branch rebased onto stable_base (the upstream
-  # PR branch, listed via `pr`, is develop-based and doesn't apply onto the tag).
+  # PR commits conflict when applied to v0.31.1 directly; the branch resolves them).
   - name: Open gallery slideshow from the galleries page
-    status: open-pr
+    status: merged
     issue: 1579
     pr: 7035
     branch: void/gallery-lightbox
@@ -83,9 +86,6 @@ features:
     status: pending
     issue: 4315
     pr: null
-    # Stacked on the gallery-lightbox branch: that change rewrites
-    # useGalleryLightbox/useGalleriesLightbox (where the counter's total is
-    # threaded), so the counter must be authored on top of it.
     depends_on:
       - Open gallery slideshow from the galleries page
     branch: void/global-counter
