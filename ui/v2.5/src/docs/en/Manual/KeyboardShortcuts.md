@@ -134,7 +134,7 @@
 | `s s` | Save Scene |
 | `d d` | Delete Scene |
 
-## Groups Page shortcuts
+## Groups page shortcuts
 
 | Keyboard sequence | Action |
 |-------------------|--------|
