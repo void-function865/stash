@@ -90,3 +90,11 @@ features:
       - Open gallery slideshow from the galleries page
     branch: void/global-counter
     summary: Show a global image position counter in the lightbox.
+
+  - name: Fix lightbox landing on the wrong image at a page boundary
+    status: open-pr
+    issue: 7082
+    pr: 7083
+    commits:
+      - 3c1036129c550c409aee15091d76f32ff4d5dfc5
+    summary: Reconcile the lightbox index off the page prop so crossing a gallery page boundary lands on the new page's first/last image instead of clamping a stale index onto its last image.
