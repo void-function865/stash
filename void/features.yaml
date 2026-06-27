@@ -66,12 +66,17 @@ features:
     branch: void/gallery-lightbox
     summary: A magnifying-glass control on gallery cards opens the slideshow directly.
 
+  # Branch (not the bare merge SHA) because the lightbox features stack: the
+  # later open-PR lightbox changes are cherry-picked onto this, so it forms the
+  # base of the void lightbox chain (gallery -> delete -> global-counter ->
+  # page-boundary -> rating).
   - name: Delete image shortcut and button in the lightbox
     status: merged
     issue: 4512
     pr: 7022
-    commits:
-      - 594bf46b682d11f390d5edeaaa257769dfd01b98
+    depends_on:
+      - Open gallery slideshow from the galleries page
+    branch: void/delete
     summary: Adds a "d d" shortcut and a trash button to delete the current image from the lightbox.
 
   - name: Safari auto-start on transcode-required scenes
@@ -87,7 +92,7 @@ features:
     issue: 4315
     pr: 7084
     depends_on:
-      - Open gallery slideshow from the galleries page
+      - Delete image shortcut and button in the lightbox
     branch: void/global-counter
     summary: Show a global image position counter in the lightbox.
 
@@ -95,6 +100,16 @@ features:
     status: open-pr
     issue: 7082
     pr: 7083
-    commits:
-      - 3c1036129c550c409aee15091d76f32ff4d5dfc5
+    depends_on:
+      - Global image counter in the lightbox
+    branch: void/page-boundary
     summary: Reconcile the lightbox index off the page prop so crossing a gallery page boundary lands on the new page's first/last image instead of clamping a stale index onto its last image.
+
+  - name: Rating keyboard shortcuts for lightbox images
+    status: open-pr
+    issue: 5616
+    pr: 7088
+    depends_on:
+      - Fix lightbox landing on the wrong image at a page boundary
+    branch: void/rating
+    summary: Press "r" then a digit to rate the current image in the lightbox (stars and decimal), reusing the detail-page rating hook via a lightbox-scoped Mousetrap instance.
