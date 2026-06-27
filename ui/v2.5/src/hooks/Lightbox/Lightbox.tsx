@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Button,
   Col,
@@ -15,6 +21,7 @@ import Mousetrap from "mousetrap";
 import { Icon } from "src/components/Shared/Icon";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import useInterval from "../Interval";
+import { useRatingKeybinds } from "../keybinds";
 import usePageVisibility from "../PageVisibility";
 import { useToast } from "../Toast";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -145,8 +152,18 @@ export const LightboxComponent: React.FC<IProps> = ({
   const [showChapters, setShowChapters] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(0);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const lastDKeyTime = useRef<number>(0);
   const [navOffset, setNavOffset] = useState<React.CSSProperties | undefined>();
+
+  // The lightbox pauses the global Mousetrap singleton while open, so it owns a
+  // separate (non-paused) instance for its own sequence shortcuts (ratings,
+  // "d d"). The mousetrap-pause plugin tracks `paused` per-instance, so this
+  // instance keeps firing while global shortcuts stay suppressed.
+  const mousetrap = useMemo(() => new Mousetrap(), []);
+  useEffect(() => {
+    return () => {
+      mousetrap.reset();
+    };
+  }, [mousetrap]);
 
   const [zoom, setZoom] = useState(1);
 
@@ -465,18 +482,8 @@ export const LightboxComponent: React.FC<IProps> = ({
       if (e.key === "ArrowLeft") handleLeft();
       else if (e.key === "ArrowRight") handleRight();
       else if (e.key === "Escape") close();
-      else if (
-        e.key === "d" &&
-        images[index ?? initialIndex]?.id !== undefined
-      ) {
-        const now = Date.now();
-        if (now - lastDKeyTime.current < 1000) {
-          setIsDeleteDialogOpen(true);
-        }
-        lastDKeyTime.current = now;
-      }
     },
-    [setInstant, handleLeft, handleRight, close, images, index, initialIndex]
+    [setInstant, handleLeft, handleRight, close]
   );
   const handleFullScreenChange = () => {
     if (clearIntervalCallback.current) {
@@ -563,6 +570,40 @@ export const LightboxComponent: React.FC<IProps> = ({
   };
 
   const currentIndex = index === null ? initialIndex : index;
+  const currentImageId = images[currentIndex]?.id;
+
+  function setRating(v: number | null) {
+    if (currentImageId) {
+      updateImage({
+        variables: {
+          input: {
+            id: currentImageId,
+            rating100: v,
+          },
+        },
+      });
+    }
+  }
+
+  // Rating shortcuts ("r" then digit(s)) via the lightbox-scoped Mousetrap
+  // instance, reusing the same hook as the scene/image detail pages.
+  useRatingKeybinds(
+    isVisible,
+    config?.ui.ratingSystemOptions?.type,
+    (v) => setRating(Number.isNaN(v) ? null : v),
+    mousetrap
+  );
+
+  // "d d" delete shortcut, using Mousetrap's native sequence binding (matching
+  // the rest of the app) on the lightbox-scoped instance.
+  useEffect(() => {
+    if (!isVisible || currentImageId === undefined) return;
+
+    mousetrap.bind("d d", () => setIsDeleteDialogOpen(true));
+    return () => {
+      mousetrap.unbind("d d");
+    };
+  }, [isVisible, currentImageId, mousetrap]);
 
   useEffect(() => {
     // Don't auto-close while images are still loading. Some entry points open
@@ -805,19 +846,6 @@ export const LightboxComponent: React.FC<IProps> = ({
 
     const currentImage: ILightboxImage | undefined = images[currentIndex];
     const title = currentImage ? imageTitle(currentImage) : undefined;
-
-    function setRating(v: number | null) {
-      if (currentImage?.id) {
-        updateImage({
-          variables: {
-            input: {
-              id: currentImage.id,
-              rating100: v,
-            },
-          },
-        });
-      }
-    }
 
     async function onIncrementClick() {
       if (currentImage?.id === undefined) return;
