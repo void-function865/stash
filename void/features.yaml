@@ -83,9 +83,9 @@ features:
     summary: Fix scene auto-start in Safari when the scene requires server-side transcoding.
 
   - name: Global image counter in the lightbox
-    status: pending
+    status: open-pr
     issue: 4315
-    pr: null
+    pr: 7084
     depends_on:
       - Open gallery slideshow from the galleries page
     branch: void/global-counter
