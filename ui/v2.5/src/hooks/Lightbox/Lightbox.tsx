@@ -126,6 +126,16 @@ export const LightboxComponent: React.FC<IProps> = ({
   const oldIndex = useRef<number | null>(null);
   const [instantTransition, setInstantTransition] = useState(false);
   const [isSwitchingPage, setIsSwitchingPage] = useState(true);
+  // Synchronous mirror of isSwitchingPage. The nav handlers (handleLeft/
+  // handleRight, reached by the arrow keys, the on-screen chevrons and the
+  // image-edge clicks) fire on raw keydown/click events that can arrive faster
+  // than React re-renders, so the isSwitchingPage *state* they close over is
+  // stale. The ref reflects an in-flight page switch immediately — set true
+  // before pageCallback — so rapid inputs are dropped and, crucially, the
+  // index-range effect won't clamp a stale index while a (possibly
+  // synchronously-cached) page is still swapping in. The landing index stays
+  // under the handlers' control; this ref only gates, it never picks the index.
+  const isSwitchingPageRef = useRef(true);
   const [isFullscreen, setFullscreen] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
@@ -257,7 +267,21 @@ export const LightboxComponent: React.FC<IProps> = ({
 
   useEffect(() => {
     if (images !== oldImages.current && isSwitchingPage) {
+      // The new page's images have arrived. Resolve the handler's intended
+      // landing: a -1 sentinel (set by a backward cross or a backward wrap)
+      // means the new page's last image; any other value is the handler's own
+      // target — 0 for a forward cross/wrap, indexInPage for a chapter jump —
+      // and is kept as-is. Clear the ref synchronously so the index-range
+      // effect can resume guarding same-page shrinks.
       if (index === -1) setIndex(images.length - 1);
+      // Pin the baseline to the page we just settled. Without this, on engines
+      // where the parent's new `images` and the handler's local setIndex(-1)
+      // land in *different* commits, this effect can fire on the new images
+      // before the -1 has applied, clear isSwitchingPage early, and then the -1
+      // renders (a stray "0 / N"). Re-pinning makes the guard below false until
+      // the next switch actually swaps the array.
+      oldImages.current = images;
+      isSwitchingPageRef.current = false;
       setIsSwitchingPage(false);
     }
   }, [isSwitchingPage, images, index]);
@@ -370,7 +394,7 @@ export const LightboxComponent: React.FC<IProps> = ({
 
   const handleLeft = useCallback(
     (isUserAction = true) => {
-      if (isSwitchingPage || index === -1) return;
+      if (isSwitchingPageRef.current || index === -1) return;
 
       if (disableAnimation) {
         setInstant();
@@ -380,12 +404,18 @@ export const LightboxComponent: React.FC<IProps> = ({
       setMovingLeft(true);
 
       if (index === 0) {
-        // go to next page, or loop back if no callback is set
+        // go to previous page, or loop back if no callback is set. Raise the
+        // guard and set the target index *before* pageCallback: an
+        // already-cached page can swap its images in synchronously, so the
+        // guard must be up first or a rapid input (and the index-range effect)
+        // races the swap. -1 is the sentinel the settle effect resolves to the
+        // new page's last image.
         if (pageCallback) {
-          pageCallback({ direction: -1 });
+          isSwitchingPageRef.current = true;
+          setIsSwitchingPage(true);
           setIndex(-1);
           oldImages.current = images;
-          setIsSwitchingPage(true);
+          pageCallback({ direction: -1 });
         } else setIndex(images.length - 1);
       } else setIndex((index ?? 0) - 1);
 
@@ -396,7 +426,6 @@ export const LightboxComponent: React.FC<IProps> = ({
     [
       images,
       pageCallback,
-      isSwitchingPage,
       resetIntervalCallback,
       index,
       disableAnimation,
@@ -406,7 +435,7 @@ export const LightboxComponent: React.FC<IProps> = ({
 
   const handleRight = useCallback(
     (isUserAction = true) => {
-      if (isSwitchingPage) return;
+      if (isSwitchingPageRef.current) return;
 
       if (disableAnimation) {
         setInstant();
@@ -416,12 +445,15 @@ export const LightboxComponent: React.FC<IProps> = ({
       setShowChapters(false);
 
       if (index === images.length - 1) {
-        // go to preview page, or loop back if no callback is set
+        // go to next page, or loop back if no callback is set. Guard and target
+        // index set before pageCallback (see handleLeft): land on the new
+        // page's first image, even when a cached page swaps in synchronously.
         if (pageCallback) {
-          pageCallback({ direction: 1 });
-          oldImages.current = images;
+          isSwitchingPageRef.current = true;
           setIsSwitchingPage(true);
           setIndex(0);
+          oldImages.current = images;
+          pageCallback({ direction: 1 });
         } else setIndex(0);
       } else setIndex((index ?? 0) + 1);
 
@@ -433,7 +465,6 @@ export const LightboxComponent: React.FC<IProps> = ({
       images,
       setIndex,
       pageCallback,
-      isSwitchingPage,
       resetIntervalCallback,
       index,
       disableAnimation,
@@ -563,19 +594,37 @@ export const LightboxComponent: React.FC<IProps> = ({
     if (isLoading) return;
     if (images.length === 0) {
       close();
-    } else if (index !== null && index >= images.length) {
+    } else if (
+      !isSwitchingPageRef.current &&
+      index !== null &&
+      index >= images.length
+    ) {
+      // Same-page shrink only — e.g. the last image was deleted and findImages
+      // refetched a shorter list. While a page switch is in flight the index is
+      // transiently stale against a just-swapped, shorter page; clamping it
+      // here is what made a forward cross land on the page's *last* image. The
+      // settle effect reconciles the switch instead, so skip the clamp then.
       setIndex(images.length - 1);
     }
   }, [images.length, index, close, isLoading]);
 
   function gotoPage(imageIndex: number) {
+    // indexInPage is the handler's chosen target; the settle effect keeps it
+    // (only the -1 sentinel is remapped), so a chapter jump lands on the right
+    // image of the new page rather than its first/last.
     const indexInPage = (imageIndex - 1) % pageSize;
     if (pageCallback) {
       let jumppage = Math.floor((imageIndex - 1) / pageSize) + 1;
       if (page !== jumppage) {
-        pageCallback({ page: jumppage });
-        oldImages.current = images;
+        // Same ordering as the nav handlers: raise the guard and set the
+        // target index before pageCallback so a cached page can't race them.
+        isSwitchingPageRef.current = true;
         setIsSwitchingPage(true);
+        oldImages.current = images;
+        setIndex(indexInPage);
+        pageCallback({ page: jumppage });
+        setShowChapters(false);
+        return;
       }
     }
 
