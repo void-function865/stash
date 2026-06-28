@@ -87,7 +87,7 @@ export const useGalleriesLightbox = () => {
   }, [data, setLightboxState]);
 
   function loadPage(page: number) {
-    const current = active.current;
+    const { current } = active;
     if (!current) return;
 
     fetchImages({
@@ -125,7 +125,7 @@ export const useGalleriesLightbox = () => {
   }
 
   function handleLightBoxPage(props: { direction?: number; page?: number }) {
-    const current = active.current;
+    const { current } = active;
     if (!current) return;
 
     const { direction, page: newPage } = props;
