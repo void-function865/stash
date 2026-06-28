@@ -148,6 +148,20 @@
 | `r {0-9} {0-9}` | Set rating (decimal - `00` for `10.0`) |
 | ``r ` `` | Unset rating (decimal) |
 
+### Touch gestures
+
+On touch devices the lightbox also supports gestures:
+
+| Gesture | Action |
+|---------|--------|
+| Swipe left / right | Next / previous image |
+| Swipe up | Delete current image (opens the confirmation dialog) |
+| Swipe down | Close the lightbox |
+| Double-tap | Toggle zoom (fit ↔ zoomed in) |
+| Pinch | Zoom in / out |
+
+While zoomed in, dragging pans the image (stopping at its edges) instead of switching, deleting or closing.
+
 ## Groups page shortcuts
 
 | Keyboard sequence | Action |
