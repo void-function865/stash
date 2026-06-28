@@ -103,7 +103,7 @@ features:
     depends_on:
       - Global image counter in the lightbox
     branch: void/page-boundary
-    summary: Reconcile the lightbox index off the page prop so crossing a gallery page boundary lands on the new page's first/last image instead of clamping a stale index onto its last image.
+    summary: Back the lightbox page-switch guard with a synchronous ref - gating the nav handlers and the index-range clamp, and set before pageCallback - so crossing a gallery page boundary can't land a stale index on the new page's last image. Keeps the landing index handler-controlled (-1 sentinel -> last, 0 -> first, indexInPage for chapters) so first/last wraparound and chapter navigation don't regress.
 
   - name: Rating keyboard shortcuts for lightbox images
     status: open-pr
