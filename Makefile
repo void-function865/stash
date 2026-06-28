@@ -19,6 +19,9 @@ endif
 # set LDFLAGS environment variable to any extra ldflags required
 LDFLAGS := $(LDFLAGS)
 
+# void build: point the update check at the fork's releases
+UPDATE_REPO := void-function865/stash
+
 # set OUTPUT environment variable to generate a specific binary name
 # this will apply to both `stash` and `phasher`, so build them separately
 # alternatively use STASH_OUTPUT or PHASHER_OUTPUT to set the value individually
