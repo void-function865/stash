@@ -113,3 +113,11 @@ features:
       - Fix lightbox landing on the wrong image at a page boundary
     branch: void/rating
     summary: Press "r" then a digit to rate the current image in the lightbox (stars and decimal), reusing the detail-page rating hook via a lightbox-scoped Mousetrap instance.
+
+  - name: Touch gestures in the lightbox
+    status: pending
+    issue: 2538
+    depends_on:
+      - Rating keyboard shortcuts for lightbox images
+    branch: void/touch-gestures
+    summary: Add mobile touch gestures to the lightbox - swipe left/right to change image, swipe up to delete (via the existing confirmation dialog), swipe down to close, and double-tap to zoom toward the tapped point (fit <-> 1:1 native) - alongside focal-anchored pinch-to-zoom. A single-finger axis-locked state machine decides pan vs swipe from the image-vs-box geometry (a zoomed-in drag pans and clamps to the image edges; mouse drag clamps too). Max zoom is capped per-image and per-device to avoid exhausting GPU memory on phones, large images show a busy spinner on their first (expensive) zoom, and a ResizeObserver keeps the fit/centering correct on window resize and device rotation (preserving the focal point when zoomed). The swipe-up delete reuses the delete plumbing; the delete confirmation is never bypassed.
