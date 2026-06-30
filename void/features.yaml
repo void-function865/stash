@@ -1,0 +1,123 @@
+# void build manifest — single source of truth for the downstream "void" build.
+#
+# The assemble script (void/assemble.py) checks out `stable_base`, cherry-picks
+# every feature that has a `branch` or `commits`, applies the fork-specific
+# build config, regenerates the README, and tags the result `<stable_base>-voidN`.
+#
+# Generated README groups features by `status`:
+#   merged   - merged upstream, awaiting a stable release (drop once released)
+#   open-pr  - has an open pull request upstream
+#   pending  - not yet submitted upstream (e.g. queued behind the 3-PR limit)
+#
+# A feature with neither `branch` nor `commits` is listed in the README but not
+# built (e.g. a planned change with no code yet).
+#
+# `depends_on` (list of feature `name`s) declares that a branch is stacked on
+# another not-yet-merged feature. Dependencies are cherry-picked first, and only
+# the commits unique to the dependent branch are applied (so the shared base is
+# not applied twice).
+
+stable_base: v0.31.1
+upstream_repo: stashapp/stash
+fork_repo: void-function865/stash
+upstream_remote: origin
+fork_remote: fork
+
+features:
+  - name: Don't mark forks as Official Build
+    status: merged
+    issue: 7065
+    pr: 7075
+    commits:
+      - 23a6b80de54f567f55223b882245759340bb0a71
+    summary: CI only sets the official-build flag for the upstream repository, so fork builds correctly report "Unofficial Build".
+
+  - name: Configurable update-check source
+    status: merged
+    issue: 7066
+    pr: 7076
+    commits:
+      - 19002b49700d0c71657835d3a8a2078a7725a644
+      - 61bcf6f29ff51a3564365e50e29da07388b5501e
+    summary: Lets a build point the update check at its own releases via a build-time UPDATE_REPO override (defaults to upstream).
+
+  - name: Image checksum cache-buster
+    status: merged
+    issue: null
+    pr: 6998
+    commits:
+      - 50fc59317704db80aa3c173ee28b2eab54295276
+    summary: Use the file checksum for image URL cache-busting so ratings/edits refresh reliably in the lightbox.
+
+  - name: Lightbox image aspect ratios on Safari
+    status: merged
+    issue: 5087
+    pr: 6961
+    commits:
+      - 64a104d9052a59c16964620edfa08663e939d23f
+    summary: Fix warped image aspect ratios in the lightbox on Safari.
+
+  # `branch` points at the void/* branch rebased onto stable_base (the upstream
+  # PR commits conflict when applied to v0.31.1 directly; the branch resolves them).
+  - name: Open gallery slideshow from the galleries page
+    status: merged
+    issue: 1579
+    pr: 7035
+    branch: void/gallery-lightbox
+    summary: A magnifying-glass control on gallery cards opens the slideshow directly.
+
+  # Branch (not the bare merge SHA) because the lightbox features stack: the
+  # later open-PR lightbox changes are cherry-picked onto this, so it forms the
+  # base of the void lightbox chain (gallery -> delete -> global-counter ->
+  # page-boundary -> rating).
+  - name: Delete image shortcut and button in the lightbox
+    status: merged
+    issue: 4512
+    pr: 7022
+    depends_on:
+      - Open gallery slideshow from the galleries page
+    branch: void/delete
+    summary: Adds a "d d" shortcut and a trash button to delete the current image from the lightbox.
+
+  - name: Safari auto-start on transcode-required scenes
+    status: merged
+    issue: 6646
+    pr: 7016
+    commits:
+      - 1534587cb1be3a74d9954cdeac2568ba20c8c2c4
+    summary: Fix scene auto-start in Safari when the scene requires server-side transcoding.
+
+  - name: Global image counter in the lightbox
+    status: open-pr
+    issue: 4315
+    pr: 7084
+    depends_on:
+      - Delete image shortcut and button in the lightbox
+    branch: void/global-counter
+    summary: Show a global image position counter in the lightbox.
+
+  - name: Fix lightbox landing on the wrong image at a page boundary
+    status: open-pr
+    issue: 7082
+    pr: 7083
+    depends_on:
+      - Global image counter in the lightbox
+    branch: void/page-boundary
+    summary: Back the lightbox page-switch guard with a synchronous ref - gating the nav handlers and the index-range clamp - so crossing a gallery page boundary can't land a stale index on the new page's last image. The settle that resolves the landing fires on the page NUMBER changing (a reliable signal that the new page is present, unlike the images array identity, which goes stale across a reopen and leaked a -1 sentinel as a blank image / "40 of 77"). The landing stays handler-controlled via an explicit target (first / last / chapter index), never derived from the page-number direction, so first/last wraparound and chapter navigation don't regress.
+
+  - name: Rating keyboard shortcuts for lightbox images
+    status: open-pr
+    issue: 5616
+    pr: 7088
+    depends_on:
+      - Fix lightbox landing on the wrong image at a page boundary
+    branch: void/rating
+    summary: Press "r" then a digit to rate the current image in the lightbox (stars and decimal), reusing the detail-page rating hook via a lightbox-scoped Mousetrap instance.
+
+  - name: Touch gestures in the lightbox
+    status: pending
+    issue: 2538
+    depends_on:
+      - Rating keyboard shortcuts for lightbox images
+    branch: void/touch-gestures
+    summary: Add mobile touch gestures to the lightbox - swipe left/right to change image, swipe up to delete (via the existing confirmation dialog), swipe down to close, and double-tap to zoom toward the tapped point (fit <-> 1:1 native) - alongside focal-anchored pinch-to-zoom. A single-finger axis-locked state machine decides pan vs swipe from the image-vs-box geometry (a zoomed-in drag pans and clamps to the image edges; mouse drag clamps too). Max zoom is capped per-image and per-device to avoid exhausting GPU memory on phones, large images show a busy spinner on their first (expensive) zoom, and a ResizeObserver keeps the fit/centering correct on window resize and device rotation (preserving the focal point when zoomed). The swipe-up delete reuses the delete plumbing; the delete confirmation is never bypassed.

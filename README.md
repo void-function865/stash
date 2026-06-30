@@ -1,112 +1,47 @@
-# Stash
+# Stash (void-function865 build)
 
-[![Build](https://github.com/stashapp/stash/actions/workflows/build.yml/badge.svg?branch=develop&event=push)](https://github.com/stashapp/stash/actions/workflows/build.yml)
-[![Docker pulls](https://img.shields.io/docker/pulls/stashapp/stash.svg)](https://hub.docker.com/r/stashapp/stash 'DockerHub')
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/stashapp?logo=github)](https://github.com/sponsors/stashapp)
-[![Open Collective backers](https://img.shields.io/opencollective/backers/stashapp?logo=opencollective)](https://opencollective.com/stashapp)
-[![Go Report Card](https://goreportcard.com/badge/github.com/stashapp/stash)](https://goreportcard.com/report/github.com/stashapp/stash)
-[![Discord](https://img.shields.io/discord/559159668438728723.svg?logo=discord)](https://discord.gg/2TsNFKt)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/stashapp/stash?logo=github)](https://github.com/stashapp/stash/releases/latest)
-[![GitHub issues by-label](https://img.shields.io/github/issues-raw/stashapp/stash/bounty)](https://github.com/stashapp/stash/labels/bounty)
+This is an **unofficial downstream build** of [Stash](https://github.com/stashapp/stash). It tracks the stable release **[v0.31.1](https://github.com/stashapp/stash/releases/tag/v0.31.1)** and adds the changes listed below, each linked to its upstream issue and pull request.
 
-### **Stash is a self-hosted webapp written in Go which organizes and serves your diverse content collection, catering to both your SFW and NSFW needs.**
+> **Database-compatible with upstream v0.31.1.** These builds do not change the database schema, so you can switch between this build and the official v0.31.1 build on the same database without migrating.
 
-![Screenshot of Stash web application interface](docs/readme_assets/demo_image.png)
+Releases are versioned `0.31.1-void1`, `0.31.1-void2`, … and built from the upstream stable tag plus the patches below.
 
-- Stash gathers information about videos in your collection from the internet, and is extensible through the use of community-built plugins for a large number of content producers and sites.
-- Stash supports a wide variety of both video and image formats.
-- You can tag videos and find them later.
-- Stash provides statistics about performers, tags, studios and more.
+## Merged upstream, awaiting release
 
-You can [watch a SFW demo video](https://vimeo.com/545323354) to see it in action.
+Already merged into upstream `develop`; included here until they ship in a stable release.
 
-For further information you can consult the [documentation](https://docs.stashapp.cc) or access the in-app manual from within the application (also available at [docs.stashapp.cc/in-app-manual](https://docs.stashapp.cc/in-app-manual)).
+| Change | Issue | PR | Notes |
+| --- | --- | --- | --- |
+| Don't mark forks as Official Build | [#7065](https://github.com/stashapp/stash/issues/7065) | [#7075](https://github.com/stashapp/stash/pull/7075) | CI only sets the official-build flag for the upstream repository, so fork builds correctly report "Unofficial Build". |
+| Configurable update-check source | [#7066](https://github.com/stashapp/stash/issues/7066) | [#7076](https://github.com/stashapp/stash/pull/7076) | Lets a build point the update check at its own releases via a build-time UPDATE_REPO override (defaults to upstream). |
+| Image checksum cache-buster | — | [#6998](https://github.com/stashapp/stash/pull/6998) | Use the file checksum for image URL cache-busting so ratings/edits refresh reliably in the lightbox. |
+| Lightbox image aspect ratios on Safari | [#5087](https://github.com/stashapp/stash/issues/5087) | [#6961](https://github.com/stashapp/stash/pull/6961) | Fix warped image aspect ratios in the lightbox on Safari. |
+| Open gallery slideshow from the galleries page | [#1579](https://github.com/stashapp/stash/issues/1579) | [#7035](https://github.com/stashapp/stash/pull/7035) | A magnifying-glass control on gallery cards opens the slideshow directly. |
+| Delete image shortcut and button in the lightbox | [#4512](https://github.com/stashapp/stash/issues/4512) | [#7022](https://github.com/stashapp/stash/pull/7022) | Adds a "d d" shortcut and a trash button to delete the current image from the lightbox. |
+| Safari auto-start on transcode-required scenes | [#6646](https://github.com/stashapp/stash/issues/6646) | [#7016](https://github.com/stashapp/stash/pull/7016) | Fix scene auto-start in Safari when the scene requires server-side transcoding. |
 
-# Installing Stash
+## Open pull requests
 
-> [!tip]
-Step-by-step instructions are available at [docs.stashapp.cc/installation](https://docs.stashapp.cc/installation/).
+Submitted upstream and under review.
 
-> [!important]
->**Windows Users**
->
->As of version 0.27.0, Stash no longer supports _Windows 7, 8, Server 2008 and Server 2012._  
->At least Windows 10 or Server 2016 is required.
->
->**macOS Users**
->
-> As of version 0.29.0, Stash requires _macOS 11 Big Sur_ or later.  
-> Stash can still be run through docker on older versions of macOS.
+| Change | Issue | PR | Notes |
+| --- | --- | --- | --- |
+| Global image counter in the lightbox | [#4315](https://github.com/stashapp/stash/issues/4315) | [#7084](https://github.com/stashapp/stash/pull/7084) | Show a global image position counter in the lightbox. |
+| Fix lightbox landing on the wrong image at a page boundary | [#7082](https://github.com/stashapp/stash/issues/7082) | [#7083](https://github.com/stashapp/stash/pull/7083) | Back the lightbox page-switch guard with a synchronous ref - gating the nav handlers and the index-range clamp - so crossing a gallery page boundary can't land a stale index on the new page's last image. The settle that resolves the landing fires on the page NUMBER changing (a reliable signal that the new page is present, unlike the images array identity, which goes stale across a reopen and leaked a -1 sentinel as a blank image / "40 of 77"). The landing stays handler-controlled via an explicit target (first / last / chapter index), never derived from the page-number direction, so first/last wraparound and chapter navigation don't regress. |
+| Rating keyboard shortcuts for lightbox images | [#5616](https://github.com/stashapp/stash/issues/5616) | [#7088](https://github.com/stashapp/stash/pull/7088) | Press "r" then a digit to rate the current image in the lightbox (stars and decimal), reusing the detail-page rating hook via a lightbox-scoped Mousetrap instance. |
 
-<img src="docs/readme_assets/windows_logo.svg" width="100%" height="75"> Windows | <img src="docs/readme_assets/mac_logo.svg" width="100%" height="75"> macOS | <img src="docs/readme_assets/linux_logo.svg" width="100%" height="75"> Linux | <img src="docs/readme_assets/docker_logo.svg" width="100%" height="75"> Docker
-:---:|:---:|:---:|:---:
-[Latest Release](https://github.com/stashapp/stash/releases/latest/download/stash-win.exe) <br /> <sup><sub>[Development Preview](https://github.com/stashapp/stash/releases/download/latest_develop/stash-win.exe)</sub></sup> | [Latest Release](https://github.com/stashapp/stash/releases/latest/download/Stash.app.zip) <br /> <sup><sub>[Development Preview](https://github.com/stashapp/stash/releases/download/latest_develop/Stash.app.zip)</sub></sup> | [Latest Release (amd64)](https://github.com/stashapp/stash/releases/latest/download/stash-linux) <br /> <sup><sub>[Development Preview (amd64)](https://github.com/stashapp/stash/releases/download/latest_develop/stash-linux)</sub></sup> <br /> [More Architectures...](https://github.com/stashapp/stash/releases/latest) | [Instructions](docker/production/README.md) <br /> <sup><sub>[Sample docker-compose.yml](docker/production/docker-compose.yml)</sub></sup>
+## Pending submission
 
-Download links for other platforms and architectures are available on the [Releases](https://github.com/stashapp/stash/releases) page.
+Not yet submitted upstream. New pull requests are queued behind upstream's [3-open-PR-per-contributor limit](https://github.com/stashapp/stash/blob/develop/docs/CONTRIBUTING.md#pull-requests).
 
-## First Run
+| Change | Issue | PR | Notes |
+| --- | --- | --- | --- |
+| Touch gestures in the lightbox | [#2538](https://github.com/stashapp/stash/issues/2538) | — | Add mobile touch gestures to the lightbox - swipe left/right to change image, swipe up to delete (via the existing confirmation dialog), swipe down to close, and double-tap to zoom toward the tapped point (fit <-> 1:1 native) - alongside focal-anchored pinch-to-zoom. A single-finger axis-locked state machine decides pan vs swipe from the image-vs-box geometry (a zoomed-in drag pans and clamps to the image edges; mouse drag clamps too). Max zoom is capped per-image and per-device to avoid exhausting GPU memory on phones, large images show a busy spinner on their first (expensive) zoom, and a ResizeObserver keeps the fit/centering correct on window resize and device rotation (preserving the focal point when zoomed). The swipe-up delete reuses the delete plumbing; the delete confirmation is never bypassed. |
 
-#### Windows/macOS Users: Security Prompt
+## Installation, usage and documentation
 
-On Windows or macOS, running the app might present a security prompt since the application binary isn't yet signed. 
+This fork only adds the changes above. For installation, first-run setup, usage, and all other documentation, see the [upstream Stash repository](https://github.com/stashapp/stash) and the [official documentation](https://docs.stashapp.cc).
 
-- On Windows, bypass this by clicking "more info" and then the "run anyway" button.
-- On macOS, Control+Click the app, click "Open", and then "Open" again.
+## How this build is maintained
 
-#### ffmpeg
-
-Stash requires FFmpeg. If you don't have it installed, Stash will prompt you to download a copy during setup. It is recommended that Linux users install `ffmpeg` from their distro's package manager.
-
-# Usage
-
-## Quickstart Guide
-
-Stash is a web-based application. Once the application is running, the interface is available (by default) from `http://localhost:9999`.
-
-On first run, Stash will prompt you for some configuration options and media directories to index, called "Scanning" in Stash. After scanning, your media will be available for browsing, curating, editing, and tagging.
-
-Stash can pull metadata (performers, tags, descriptions, studios, and more) directly from many sites through the use of [scrapers](https://github.com/stashapp/stash/blob/develop/ui/v2.5/src/docs/en/Manual/Scraping.md), which integrate directly into Stash. Identifying an entire collection will typically require a mix of multiple sources:
-- The stashapp team maintains [StashDB](https://stashdb.org/), a crowd-sourced repository of scene, studio, and performer information. Connecting it to Stash will allow you to automatically identify much of a typical media collection. It runs on our stash-box software and is primarily focused on mainstream digital scenes and studios. Instructions, invite codes, and more can be found in this guide to [Accessing StashDB](https://guidelines.stashdb.org/docs/faq_getting-started/stashdb/accessing-stashdb/).
-- Several community-managed stash-box databases can also be connected to Stash in a similar manner. Each one serves a slightly different niche and follows their own methodology. A rundown of each stash-box, their differences, and the information you need to sign up can be found in this guide to [Accessing Stash-Boxes](https://guidelines.stashdb.org/docs/faq_getting-started/stashdb/accessing-stash-boxes/).
-- Many community-maintained scrapers can also be downloaded, installed, and updated from within Stash, allowing you to pull data from a wide range of other websites and databases. They can be found by navigating to `Settings → Metadata Providers → Available Scrapers → Community (stable)`. These can be trickier to use than a stash-box because every scraper works a little differently. For more information, please visit the [CommunityScrapers repository](https://github.com/stashapp/CommunityScrapers).
-- All of the above methods of scraping data into Stash are also covered in more detail in our [Guide to Scraping](https://docs.stashapp.cc/beginner-guides/guide-to-scraping/).
-
-<sub>[StashDB](http://stashdb.org) is the canonical instance of our open source metadata API, [stash-box](https://github.com/stashapp/stash-box).</sub>
-
-# Translation
-
-[![Translate](https://translate.codeberg.org/widget/stash/stash/svg-badge.svg)](https://translate.codeberg.org/engage/stash/)
-
-Stash is available in 32 languages (so far!) and it could be in your language too. We use Weblate to coordinate community translations. If you want to help us translate Stash, you can make an account at [Codeberg's Weblate](https://translate.codeberg.org/projects/stash/stash/) to contribute to new or existing languages. Thanks!
-
-The badge below shows the current translation status of Stash across all supported languages:
-
-[![Translation status](https://translate.codeberg.org/widget/stash/stash/multi-auto.svg)](https://translate.codeberg.org/engage/stash/)
-
-# Support & Resources
-
-Need help or want to get involved? Start with the documentation, then reach out to the community if you need further assistance.
-
-### Documentation
-- [Official documentation](https://docs.stashapp.cc) - official guides guides and troubleshooting.
-- [In-app manual](https://docs.stashapp.cc/in-app-manual) press <kbd>Shift</kbd> + <kbd>?</kbd> in the app or view the manual online.
-- [FAQ](https://discourse.stashapp.cc/c/support/faq/28) - common questions and answers.
-- [Community wiki](https://discourse.stashapp.cc/tags/c/community-wiki/22/stash) - guides, how-to’s and tips.
-  
-### Community & discussion
-- [Community forum](https://discourse.stashapp.cc) - community support, feature requests and discussions.
-- [Discord](https://discord.gg/2TsNFKt) - real-time chat and community support.
-- [GitHub discussions](https://github.com/stashapp/stash/discussions) - community support and feature discussions.
-- [Lemmy community](https://discuss.online/c/stashapp) - board-style community space.
-
-### Community scrapers & plugins
-- [Metadata sources](https://docs.stashapp.cc/metadata-sources/)
-- [Plugins](https://docs.stashapp.cc/plugins/)
-- [Themes](https://docs.stashapp.cc/themes/)
-- [Other projects](https://docs.stashapp.cc/other-projects/)
-
-# For Developers
-
-Pull requests are welcome! 
-
-See [Development](docs/DEVELOPMENT.md) and [Contributing](docs/CONTRIBUTING.md) for information on working with the codebase, getting a local development setup, and contributing changes.
+The build is assembled by [`void/assemble.py`](void/assemble.py) from [`void/features.yaml`](void/features.yaml) on top of the upstream stable tag. This README is generated — edit the manifest, not this file.
