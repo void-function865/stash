@@ -1,6 +1,6 @@
 /**
- * Lightbox page-boundary navigation: the #7082 race fix must NOT regress
- * first/last wraparound or chapter navigation.
+ * Lightbox wraparound: the #7082 race fix must NOT regress first/last
+ * wraparound or chapter navigation.
  *
  * CynicalAtropos flagged on PR #7083 that deriving the landing index from the
  * `page`-number direction breaks wraparound: a wrap moves the page number
@@ -8,16 +8,16 @@
  * image instead of the global first/last. This v2 keeps the landing index under
  * the handlers' control, so wraparound is preserved.
  *
- * Gallery 17 has 77 images = page 1 (40) + page 2 (37). The header is the stock
- * per-page counter: a "Page X / Y" span + a "<idx> / <pageCount>" bold.
- *   - backward from Page 1, 1/40  -> Page 2, 37/37 (last image), not 1/37.
- *   - forward  from Page 2, 37/37 -> Page 1, 1/40  (first image), not 40/40.
+ * Gallery 17 has 77 images. Since #7084 the header shows a single global
+ * counter ("N / 77"), not a per-page "Page X / Y" span plus a per-page index --
+ * so wraparound must land on the true first/last of the whole gallery:
+ *   - backward from image 1/77  -> 77/77 (the last image overall).
+ *   - forward  from image 77/77 -> 1/77  (the first image overall).
  */
 import { test, expect, waitForLightbox, parkMouse } from "./lib";
 import type { Page } from "@playwright/test";
 
 const indicator = (page: Page) => page.locator(".Lightbox-header-indicator b");
-const pageHeader = (page: Page) => page.locator(".Lightbox-header-indicator span");
 
 async function loadGalleryGrid(page: Page, galleryUrl: string): Promise<void> {
   await page.goto(galleryUrl, { waitUntil: "domcontentloaded" });
@@ -34,21 +34,19 @@ async function openGridImage(page: Page, nth: number): Promise<void> {
   await parkMouse(page);
 }
 
-test("backward wrap from the first image lands on the last image (Page 2, 37/37)", async ({
+test("backward wrap from the first image lands on the last image (77 / 77)", async ({
   page,
 }) => {
   await loadGalleryGrid(page, "/galleries/17");
   await openGridImage(page, 0);
-  await expect(pageHeader(page)).toContainText("Page 1 / 2");
-  await expect(indicator(page)).toHaveText("1 / 40");
+  await expect(indicator(page)).toHaveText("1 / 77");
 
   await page.keyboard.press("ArrowLeft");
   await parkMouse(page);
-  await expect(pageHeader(page)).toContainText("Page 2 / 2");
-  await expect(indicator(page)).toHaveText("37 / 37"); // not 1/37 (the regression)
+  await expect(indicator(page)).toHaveText("77 / 77"); // wraps to the global last image
 });
 
-test("forward wrap from the last image lands on the first image (Page 1, 1/40)", async ({
+test("forward wrap from the last image lands on the first image (1 / 77)", async ({
   page,
 }) => {
   await loadGalleryGrid(page, "/galleries/17");
@@ -63,11 +61,9 @@ test("forward wrap from the last image lands on the first image (Page 1, 1/40)",
     expect(await waitForLightbox(page, 2500)).toBe(true);
   }).toPass({ timeout: 25_000 });
   await parkMouse(page);
-  await expect(pageHeader(page)).toContainText("Page 2 / 2");
-  await expect(indicator(page)).toHaveText("37 / 37");
+  await expect(indicator(page)).toHaveText("77 / 77");
 
   await page.keyboard.press("ArrowRight");
   await parkMouse(page);
-  await expect(pageHeader(page)).toContainText("Page 1 / 2");
-  await expect(indicator(page)).toHaveText("1 / 40"); // not 40/40 (the regression)
+  await expect(indicator(page)).toHaveText("1 / 77"); // wraps to the global first image
 });
