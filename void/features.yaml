@@ -97,7 +97,7 @@ features:
     summary: Show a global image position counter in the lightbox.
 
   - name: Fix lightbox landing on the wrong image at a page boundary
-    status: open-pr
+    status: merged
     issue: 7082
     pr: 7083
     depends_on:
