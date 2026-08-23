@@ -122,3 +122,15 @@ features:
       - Rating keyboard shortcuts for lightbox images
     branch: void/touch-gestures
     summary: Add mobile touch gestures to the lightbox - swipe left/right to change image, swipe up to delete (via the existing confirmation dialog), swipe down to close, and double-tap to zoom toward the tapped point (fit <-> 1:1 native) - alongside focal-anchored pinch-to-zoom. A single-finger axis-locked state machine decides pan vs swipe from the image-vs-box geometry (a zoomed-in drag pans and clamps to the image edges; mouse drag clamps too). Max zoom is capped per-image and per-device to avoid exhausting GPU memory on phones, large images show a busy spinner on their first (expensive) zoom, and a ResizeObserver keeps the fit/centering correct on window resize and device rotation (preserving the focal point when zoomed). The swipe-up delete reuses the delete plumbing; the delete confirmation is never bypassed.
+
+  # `branch` (not the bare merge SHA) because ImageInput.tsx conflicts when the
+  # upstream commit is applied to v0.31.1 directly: the base predates an
+  # unrelated intl.formatMessage -> <FormattedMessage> refactor. The branch is
+  # v0.31.1 + that one commit with the conflict resolved. Independent of the
+  # lightbox chain (nothing else touches ImageInput), so no depends_on.
+  - name: Consolidate scene cover buttons
+    status: merged
+    issue: 1278
+    pr: 6924
+    branch: void/scene-cover-buttons
+    summary: Group the scene cover actions into the one "Set image" menu - from file / URL / clipboard, generate a screenshot from the current playback position or the default one, and clear the image - instead of scattering them between the edit panel and the scene dropdown. sceneGenerateScreenshot now returns the real job ID (schema type String! -> ID!) rather than a "todo" placeholder, so the cover preview refreshes asynchronously when the generate job finishes.
